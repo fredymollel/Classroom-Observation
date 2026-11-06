@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PIOD Observe – prototype v10</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f6f5; --surface:#ffffff; --ink:#18242b; --muted:#5c6b73; --line:#dde3e1;
+  --brand:#1f5f4a; --brand-ink:#ffffff; --brand-soft:#e3efe9;
+  --ev:#2e7d4f; --ev-soft:#dcf0e3; --se:#b7791f; --se-soft:#fbefd9; --ne:#b4443c; --ne-soft:#f8e1de; --no:#7a858b; --no-soft:#eceff0;
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121816; --surface:#1b2320; --ink:#e6ecea; --muted:#9aa8a3; --line:#2c3733;
+  --brand:#5fb592; --brand-ink:#0e1714; --brand-soft:#21352d;
+  --ev:#6cc28f; --ev-soft:#1f3a2a; --se:#e0a94f; --se-soft:#3a2f1c; --ne:#e2827a; --ne-soft:#3d2422; --no:#9aa4a9; --no-soft:#2a3133; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#121816; --surface:#1b2320; --ink:#e6ecea; --muted:#9aa8a3; --line:#2c3733;
+  --brand:#5fb592; --brand-ink:#0e1714; --brand-soft:#21352d;
+  --ev:#6cc28f; --ev-soft:#1f3a2a; --se:#e0a94f; --se-soft:#3a2f1c; --ne:#e2827a; --ne-soft:#3d2422; --no:#9aa4a9; --no-soft:#2a3133; color-scheme:dark;}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 64px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Source Sans 3","Segoe UI",Arial,sans-serif;font-size:16px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--brand)}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--brand);color:var(--brand-ink)}
+.bar{max-width:980px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{font-weight:700;font-size:18px;margin-right:auto}
+.brand small{font-weight:400;opacity:.8;margin-left:6px}
+nav{display:flex;gap:4px}
+nav a{color:var(--brand-ink);text-decoration:none;padding:6px 12px;border-radius:6px;font-weight:600;opacity:.8}
+nav a[aria-current="page"]{background:rgba(255,255,255,.18);opacity:1}
+:root[data-theme="dark"] nav a[aria-current="page"]{background:rgba(0,0,0,.2)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) nav a[aria-current="page"]{background:rgba(0,0,0,.2)}}
+main{max-width:980px;margin:0 auto;padding:20px 16px 64px}
+.proto{font-size:14px;color:var(--muted);margin:0 0 16px}
+h1{font-size:26px;margin:0 0 4px}
+h2{font-size:19px;margin:0 0 10px}
+.sub{color:var(--muted);margin:0 0 20px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin-bottom:16px}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+label.f{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:14px}
+select,input,textarea{font:inherit;font-weight:400;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 10px;width:100%}
+textarea{min-height:64px;resize:vertical}
+select:focus,input:focus,textarea:focus,button:focus-visible,a:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 14px;font:inherit;font-size:15px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.ind{border-top:1px solid var(--line);padding:14px 0}
+.ind:first-of-type{border-top:none;padding-top:4px}
+.ind-head{display:flex;gap:10px;align-items:baseline}
+.ind-num{font-weight:700;color:var(--brand);min-width:18px}
+.ind-title{font-weight:600}
+.ind-pillar{font-size:13px;color:var(--muted)}
+.ind-inv{font-size:14px;color:var(--muted);margin:4px 0 8px 28px;line-height:1.45}
+.ind-inv b{color:var(--ink);font-weight:600}
+.rate{display:flex;flex-wrap:wrap;gap:6px;margin-left:28px}
+.rate button{font:inherit;font-size:14px;padding:6px 12px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.rate button[aria-pressed="true"][data-v="E"]{background:var(--ev-soft);border-color:var(--ev);color:var(--ev);font-weight:600}
+.rate button[aria-pressed="true"][data-v="S"]{background:var(--se-soft);border-color:var(--se);color:var(--se);font-weight:600}
+.rate button[aria-pressed="true"][data-v="N"]{background:var(--ne-soft);border-color:var(--ne);color:var(--ne);font-weight:600}
+.rate button[aria-pressed="true"][data-v="X"]{background:var(--no-soft);border-color:var(--no);color:var(--no);font-weight:600}
+.legend{font-size:14px;color:var(--muted);margin:0 0 10px}
+.legend b{color:var(--ink)}
+.err{color:var(--ne);font-size:14px;margin-top:6px;display:none}
+.missing .err{display:block}
+.missing.ind .ind-title,.missing>label.f{color:var(--ne)}
+.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{font:inherit;font-weight:600;border-radius:6px;padding:10px 20px;cursor:pointer;border:1px solid var(--brand)}
+.btn.primary{background:var(--brand);color:var(--brand-ink)}
+.btn.ghost{background:transparent;color:var(--brand)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:8px;display:none;z-index:20}
+.toast.show{display:block}
+.table-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th{text-align:left;font-size:13px;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr.click{cursor:pointer}
+tr.click:hover td{background:var(--brand-soft)}
+.lvl{display:inline-block;padding:1px 10px;border-radius:999px;font-size:13px;font-weight:600;background:var(--brand-soft);color:var(--brand)}
+.due{color:var(--ne);font-weight:600}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.filters select{width:auto}
+.bars{display:flex;flex-direction:column;gap:10px}
+.brow{display:grid;grid-template-columns:minmax(150px,240px) 1fr 52px;gap:10px;align-items:center;font-size:15px}
+.stack{display:flex;height:16px;border-radius:4px;overflow:hidden;background:var(--no-soft)}
+.stack span{display:block;height:100%}
+.pct{text-align:right;font-weight:700}
+.key{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:4px 0 14px}
+.key i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.stat b{display:block;font-size:28px;line-height:1.1}
+.stat span{font-size:14px;color:var(--muted)}
+.detail dl{display:grid;grid-template-columns:minmax(140px,220px) 1fr;gap:6px 14px;margin:0}
+.detail dt{color:var(--muted)}
+.detail dd{margin:0}
+.view{display:none}.view.on{display:block}
+@media (max-width:560px){.brow{grid-template-columns:1fr 46px}.brow .lab{grid-column:1/-1}.detail dl{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:no-preference){.toast{transition:opacity .2s}}
+.lvl.mood-E{background:var(--ev-soft);color:var(--ev)}.lvl.mood-A{background:var(--se-soft);color:var(--se)}
+.evid{margin:8px 0 0 28px}.attach{padding:6px 12px;font-size:14px}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.thumbs:empty{display:none}
+.thumb{position:relative;width:96px;height:72px;border-radius:6px;overflow:hidden;border:1px solid var(--line);background:var(--no-soft)}
+.tag{font-size:12px;font-weight:600;background:var(--brand-soft);color:var(--brand);border-radius:999px;padding:1px 8px;margin-left:8px;vertical-align:2px;white-space:nowrap}.def{font-size:14px;color:var(--muted);margin:0 0 16px}.def b{color:var(--ink)}.ok{color:var(--ev);font-weight:600}.no{color:var(--ne);font-weight:600}
+.thumb.lg{width:160px;height:120px}.thumb img,.thumb video{width:100%;height:100%;object-fit:cover;display:block}
+.thumb>button{position:absolute;top:2px;right:2px;width:24px;height:24px;border:0;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;font-size:16px;line-height:1;cursor:pointer;padding:0}
+</style>
+</head>
+<body>
+<header><div class="bar">
+  <div class="brand">PIOD Dashboard<small>Observe</small></div>
+  <nav aria-label="Main">
+    <a href="#new" data-v="new">New observation</a>
+    <a href="#observations" data-v="observations">Observations</a>
+    <a href="#summary" data-v="summary">School summary</a>
+    <a href="#kpis" data-v="kpis">KPI tracker</a>
+  </nav>
+</div></header>
+
+<main>
+<p class="proto">Prototype with sample data. Observations you add are kept only in this browser. Tags on each section show which KPI the answers feed: 1.1 (two observations per teacher with documented feedback), 1.2 (teachers applying competency-based instruction), 3.1 (schools keeping their best practice score as support reduces).</p>
+
+<!-- NEW OBSERVATION -->
+<section class="view" id="v-new">
+  <h1>New observation</h1>
+  <p class="sub">About 5 minutes. Mark only what you saw. This is for coaching, not appraisal.</p>
+  <form id="obsForm" novalidate>
+    <div class="panel">
+      <h2>Lesson details<span class="tag">KPI 1.1</span><span class="tag">KPI 3.1</span></h2>
+      <div class="fields">
+        <div class="q" data-k="school"><label class="f">School<select name="school"></select></label><p class="err">Choose a school</p></div>
+        <div class="q" data-k="observer"><label class="f">Observer<select name="observer"></select></label><p class="err">Choose an observer</p></div>
+        <div class="q" data-k="mentor"><label class="f">Mentor observed<select name="mentor"></select></label><p class="err">Choose a mentor</p></div>
+        <div class="q" data-k="form"><label class="f">Form level<select name="form"></select></label><p class="err">Choose a form level</p></div>
+        <div class="q" data-k="subject"><label class="f">Subject<select name="subject"></select></label><p class="err">Choose a subject</p></div>
+        <div class="q" data-k="date"><label class="f">Date of observation<input type="date" name="date"></label><p class="err">Enter the date</p></div>
+        <div class="q" data-k="plan"><label class="f">Lesson plan<select name="plan"></select></label><p class="err">Choose one</p></div>
+        <div class="q" data-k="role"><label class="f">Observer role<select name="role"></select></label><p class="err">Choose a role</p></div>
+        <div class="q" data-k="present"><label class="f">OETZ staff present in the lesson?<select name="present"></select></label><p class="err">Choose one</p></div>
+        <div class="q" data-k="support"><label class="f">School support level now<select name="support"></select></label><p class="err">Choose one</p></div>
+        <div class="q" data-k="oemat"><label class="f">OETZ materials used in the lesson<select name="oemat"></select></label><p class="err">Choose one</p></div>
+      </div>
+    </div>
+
+    <div class="panel q" data-k="followup">
+      <h2>Follow-up</h2>
+      <p class="legend" id="lastStep">Was the last action step put into practice?</p>
+      <div class="chips" data-group="followup"></div>
+      <p class="err">Choose one</p>
+    </div>
+
+    <div class="panel">
+      <h2>Setting the stage: classroom conditions<span class="tag">KPI 1.3</span></h2>
+      <p class="legend">Six classroom conditions that help the teacher and students move swiftly through the lesson. For A to D, rate each condition by its impact: <b>Evident</b> means the condition is in place and clearly helps learning move smoothly. E and F have their own choices.</p>
+      <div id="norms"></div>
+      <div class="ind q" data-k="mood">
+        <div class="ind-head"><span class="ind-num">E</span><div><div class="ind-title">Students’ mood</div><div class="ind-pillar">Classroom condition</div></div></div>
+        <p class="ind-inv"><b>Engaged:</b> students are attentive, curious and keen to take part. <b>Apathetic:</b> students seem bored, withdrawn or reluctant to take part.</p>
+        <div class="chips" data-group="mood" style="margin-left:28px"></div>
+        <p class="err" style="margin-left:28px">Choose one</p>
+      </div>
+      <div class="ind q" data-k="mat">
+        <div class="ind-head"><span class="ind-num">F</span><div><div class="ind-title">Availability of learning materials</div><div class="ind-pillar">Classroom condition</div></div></div>
+        <p class="ind-inv">Do students have the materials they need to learn, such as textbooks, writing materials, worksheets or practical and local materials?</p>
+        <div class="chips" data-group="mat" style="margin-left:28px"></div>
+        <p class="err" style="margin-left:28px">Choose one</p>
+        <label class="f" style="margin:10px 0 0 28px">Which materials were missing or shared? (optional)<textarea name="matnote"></textarea></label>
+      </div>
+      <div class="q" data-k="impact" style="border-top:1px solid var(--line);padding-top:14px">
+        <p class="legend"><b>Impact on learning:</b> how much learning time was lost to transitions, waiting or behaviour?</p>
+        <div class="chips" data-group="impact"></div>
+        <p class="err">Choose one</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Competency-based instructional practices<span class="tag">KPI 1.2</span><span class="tag">KPI 3.1</span></h2>
+      <p class="legend">Practices follow the lesson plan stages. For each one, look at what the teacher and the students are doing, then rate the practice. Where useful, attach a photo or video as evidence.</p>
+      <p class="legend"><b>Evident</b>: clearly seen for most of the lesson or most students. <b>Somewhat evident</b>: seen partly, briefly or with only some students. <b>Not evident</b>: there was a chance to see it, but it did not happen. <b>Not observed</b>: no chance to see it in this lesson (not a negative mark).</p>
+      <div id="indicators"></div>
+    </div>
+
+    <div class="panel q" data-k="overall">
+      <h2>Overall, how was the lesson taught?<span class="tag">KPI 1.2</span></h2>
+      <p class="legend"><b>Teacher-led</b>: students mostly listen, answer questions and copy notes. <b>Competency-based</b> (target): students ask questions, discuss, practise in activities and connect learning to their lives. <b>Student-led</b>: students explain reasoning, assess each other and lead activities. <b>Student-driven</b>: students set their own goals and pursue their own questions.</p>
+      <div class="chips" data-group="overall"></div>
+      <p class="err">Choose one</p>
+    </div>
+
+    <div class="panel">
+      <h2>Feedback<span class="tag">KPI 1.1</span></h2>
+      <div class="fields" style="grid-template-columns:1fr">
+        <div class="q" data-k="strength"><label class="f">Key strength, with a specific example<textarea name="strength"></textarea></label><p class="err">Add a strength</p></div>
+        <div class="q" data-k="focus"><label class="f">Classroom condition or practice to focus on next<select name="focus"></select></label><p class="err">Choose a condition or practice</p></div>
+        <div class="q" data-k="action"><label class="f">Action step<textarea name="action" placeholder="In the next lesson, the mentor will…"></textarea></label><p class="err">Add an action step</p></div>
+        <div class="q" data-k="fbdate"><label class="f">Date feedback was given to the teacher<input type="date" name="fbdate"></label><p class="err">Enter the date feedback was documented</p></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="submit" class="btn primary">Save observation</button>
+      <button type="button" class="btn ghost" id="fillSample">Fill with sample answers</button>
+      <button type="button" class="btn ghost" id="clearForm">Clear</button>
+    </div>
+  </form>
+</section>
+
+<!-- OBSERVATIONS -->
+<section class="view" id="v-observations">
+  <h1>Observations</h1>
+  <p class="sub">Select a row to see the full observation.</p>
+  <div class="filters">
+    <select id="fMentor" aria-label="Filter by mentor"></select>
+  </div>
+  <div class="panel table-wrap"><table>
+    <thead><tr><th>Date</th><th>Mentor</th><th>Subject</th><th>Observer</th><th>Practices evident · score</th><th>Student mood</th><th>Overall</th></tr></thead>
+    <tbody id="obsRows"></tbody>
+  </table></div>
+  <div class="panel detail" id="detail" hidden></div>
+</section>
+
+<!-- SUMMARY -->
+<section class="view" id="v-summary">
+  <h1>School summary</h1>
+  <p class="sub">Based on each mentor's most recent observation.</p>
+  <div class="filters"><select id="fSchool" aria-label="Choose school"></select></div>
+  <div class="stats" id="stats"></div>
+  <div class="panel">
+    <h2>Classroom conditions and practices across the school</h2>
+    <div class="key"><span><i style="background:var(--ev)"></i>Evident</span><span><i style="background:var(--se)"></i>Somewhat evident</span><span><i style="background:var(--ne)"></i>Not evident</span><span><i style="background:var(--no)"></i>Not observed</span></div>
+    <div class="bars" id="bars"></div>
+  </div>
+  <div class="panel table-wrap">
+    <h2>Mentor tracker</h2>
+    <table><thead><tr><th>Mentor</th><th>Last observed</th><th>Overall</th><th>Focus</th><th>Action step</th></tr></thead><tbody id="tracker"></tbody></table>
+  </div>
+</section>
+<section class="view" id="v-kpis">
+  <h1>KPI tracker</h1>
+  <p class="sub">What the observation data says against the 2027 annual plan. Sample data.</p>
+  <p class="def"><b>Definitions to confirm:</b> practice score = Evident 2, Somewhat evident 1, Not evident 0, across practices observed (Not observed left out). A teacher meets the standard when the lesson is judged Competency-based or beyond. Teachers are the mentors observed.</p>
+  <div id="kpiBox"></div>
+</section>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const TODAY='2026-10-21';
+const SCHOOLS=['Mukuru','School 2','School 3'];
+const OBSERVERS=['Mussa Ntandu','Mary Qamunga','Joyce Nyalusi'];
+const MENTORS=['Emmanuel Sianga','Ibrahim Mponda','Jesca Lemunda','John John','Joseph Fadhili','Joyce Nyalusi','Lais Pusindawa','Mary Qamunga','Nasibu Athumani','Tegemea Mwampamba'];
+const FORMS=['Form 1','Form 2','Form 3','Form 4','Form 5','Form 6'];
+const SUBJECTS=['Biology','Business Studies','Chemistry','English','Geography','History','Historia ya Tanzania na Maadili','Kiswahili','Mathematics','Physics'];
+const IND=[
+ ["Lesson preparation", "Competences and lesson plan", "Teaching from a lesson plan that states the main and specific competence, the activities and an assessment criterion for each stage. The specific competence is clear and measurable, and the plan includes key questions and points to check understanding", "Able to say what they are learning today, why it matters and what a good answer or product looks like"],
+ ["Lesson preparation", "Resources and support for all learners", "Preparing real objects, local materials, worksheets or texts that match the competence and that students use themselves. Planning extra support for students who need it and a further challenge for those who finish early", "Using the materials to explore, practise or make something. Students who need help get support and keep working"],
+ ["Introduction", "Lesson opening and prior knowledge", "Opening with a hook, such as an example, scenario, song, game or KWL chart, that draws out what students already know. Sharing the specific competence, why it matters and how it links to the last lesson. Noting misconceptions", "Sharing their experiences and ideas, asking questions and linking the topic to what they learned before"],
+ ["Competence development", "Active learning and practice", "Explaining briefly and clearly, modelling where needed, then setting structured pair or group tasks with clear roles and time limits. Moving around to check work and support groups", "Working in pairs or groups on structured tasks in which everyone has a role, rather than only listening and copying notes"],
+ ["Competence development", "Questioning and quality responses", "Asking open “why” and “how” questions, giving thinking time, and prompting students to expand their answers, give reasons or examples and use subject vocabulary", "Explaining their ideas and reasoning in full answers, giving reasons or examples, and using subject vocabulary"],
+ ["Competence development", "Participation and student thinking", "Using strategies so that many students think and speak, such as think-pair-share, calling on students who have not volunteered and involving quiet students. Inviting questions and opinions", "Most students speak, write and ask questions. Groups present their findings and respond to each other’s ideas"],
+ ["Design", "Applying learning to real life", "Linking the lesson to students’ interests and backgrounds, and guiding them to use the new knowledge and skills on a situation in school or daily life", "Applying what they learned to school activities or familiar daily-life examples, for example by drawing, making a model, telling a story or solving a problem"],
+ ["Realisation", "Assessment and feedback", "Checking learning during and at the end of the lesson against the assessment criteria, using a short quiz, open question or task. Noticing misconceptions and re-explaining when needed. Giving specific, timely feedback and time to use it", "Completing the assessment task, checking their own or a peer’s work with guidance, using feedback to improve, and saying what they have learned"]
+];
+const NORMS=[
+ ["A", "Clear routines and transitions", "Giving clear, step-by-step directions and using agreed signals for attention, forming groups and handing out materials", "Responding to signals quickly, moving into groups and getting materials without fuss", "Little time is lost, and the lesson reaches all four stages"],
+ ["B", "Respect and safety to make mistakes", "Showing warmth, praising effort and progress, and responding calmly to wrong answers and to behaviour", "Listening to each other, trying answers without fear and admitting when they are confused", "More students attempt answers and ask questions"],
+ ["C", "Working together", "Setting group roles and rules, such as everyone contributes and members take turns, and checking that every group member can report", "Taking on their roles, sharing the work and helping each other", "Group time is productive, and any member can explain the group’s work"],
+ ["D", "Everyone takes part", "Making clear that all students are expected to think, speak and ask questions; giving thinking time and calling on different students", "Expecting to be asked, preparing answers and asking questions", "Answers and questions come from many students, not just a few"]
+];
+const MATS=['All students','Most students','Some students','Few or none'];
+const MOOD={E:'Engaged',A:'Apathetic'};const moodPill=m=>m?`<span class="lvl mood-${m}">${MOOD[m]}</span>`:'—';
+const MAXMB=50;let pending={};
+const IMPACT=['Almost none','Some','A lot'];
+const EF={E:'Students’ mood',F:'Availability of learning materials'};
+function lab(k){return /^[A-D]$/.test(k)?`${k}. ${NORMS['ABCD'.indexOf(k)][1]}`:/^[EF]$/.test(k)?`${k}. ${EF[k]}`:`${k}. ${IND[+k-1][1]}`;}
+const RATE={E:'Evident',S:'Somewhat evident',N:'Not evident',X:'Not observed'};
+const FOLLOW=['Yes','Partly','No','First observation'];
+const LEVELS=['Teacher-led','Competency-based','Student-led','Student-driven'];
+const PLANS=['Available, all four stages complete','Available, some stages incomplete','Not available'];
+const ROLES=['OETZ coach','School leader'],PRES=['Yes','No'],SUPP=['Full','Reduced'],OEMAT=['Yes, throughout','Partly','No','Not applicable'];
+const PTS={E:2,S:1,N:0};
+function sc(o){let p=0,n=0;for(const c of o.r){if(c==='X')continue;n++;p+=PTS[c];}return n?Math.round(p/(2*n)*100):0;}
+function norm(o){return Object.assign({role:'OETZ coach',present:'Yes',support:'Full',oemat:'Not recorded',fbdate:o.date},o);}
+const meets=o=>LEVELS.indexOf(o.overall)>=1;
+
+// Sample data (illustrative)
+const SEED=[{"id": 1, "mentor": "Emmanuel Sianga", "observer": "Mussa Ntandu", "form": "Form 2", "subject": "Kiswahili", "date": "2026-10-01", "plan": "Available, some stages incomplete", "followup": "First observation", "n": "SESE", "impact": "Some", "r": "SSEESENS", "overall": "Competency-based", "strength": "Students discussed actively in small groups and presented their findings to the class.", "focus": "7", "action": "In the next lesson, the mentor will use a quick signal to form groups within one minute, and use the time saved for a Design activity in which each group gives a local example.", "school": "Mukuru", "mood": "E", "mat": "Most students"}, {"id": 2, "mentor": "Emmanuel Sianga", "observer": "Mussa Ntandu", "form": "Form 2", "subject": "Kiswahili", "date": "2026-10-15", "plan": "Available, all four stages complete", "followup": "Partly", "n": "EESE", "impact": "Almost none", "r": "EEEESESE", "overall": "Competency-based", "strength": "Groups formed within a minute and three of five groups gave a local example without help.", "focus": "7", "action": "In the next lesson, the mentor will give every group 3 minutes to find its own local example before sharing.", "school": "Mukuru", "mood": "E", "mat": "All students"}, {"id": 3, "mentor": "Jesca Lemunda", "observer": "Mussa Ntandu", "form": "Form 2", "subject": "Biology", "date": "2026-09-22", "plan": "Available, all four stages complete", "followup": "First observation", "n": "EEEE", "impact": "Almost none", "r": "EEEESEES", "overall": "Competency-based", "strength": "Students linked the lesson to the local environment with their own examples.", "focus": "5", "action": "In the next lesson, the mentor will ask one group to challenge another group’s answer and explain why.", "school": "Mukuru", "mood": "E", "mat": "All students"}, {"id": 4, "mentor": "Tegemea Mwampamba", "observer": "Mussa Ntandu", "form": "Form 1", "subject": "Biology", "date": "2026-09-22", "plan": "Available, all four stages complete", "followup": "First observation", "n": "SESE", "impact": "Some", "r": "EESEESNS", "overall": "Competency-based", "strength": "Students connected the lesson with the surrounding environment.", "focus": "A", "action": "In the next lesson, the mentor will set a visible timer for group work and give a one-minute warning so every group finishes the task.", "school": "Mukuru", "mood": "E", "mat": "Some students"}, {"id": 5, "mentor": "Joseph Fadhili", "observer": "Mary Qamunga", "form": "Form 1", "subject": "Chemistry", "date": "2026-08-18", "plan": "Available, all four stages complete", "followup": "First observation", "n": "SSNS", "impact": "A lot", "r": "SSSESESS", "overall": "Teacher-led", "strength": "Learners completed structured tasks on time.", "focus": "1", "action": "In the next lesson, the mentor will write the specific competence on the board and ask two students why it matters.", "school": "Mukuru", "mood": "A", "mat": "Few or none"}, {"id": 6, "mentor": "John John", "observer": "Mussa Ntandu", "form": "Form 2", "subject": "English", "date": "2026-09-10", "plan": "Available, all four stages complete", "followup": "First observation", "n": "EEEE", "impact": "Almost none", "r": "EESEEEEE", "overall": "Competency-based", "strength": "Students engaged in peer discussion and critiqued ideas.", "focus": "7", "action": "In the next lesson, the mentor will ask students to use the new vocabulary in a sentence about their home or market.", "school": "Mukuru", "mood": "E", "mat": "All students"}];
+
+const SEED2=[{"id":7,"mentor":"Jesca Lemunda","observer":"Jesca Lemunda","form":"Form 2","subject":"Biology","date":"2026-10-20","plan":"Available, all four stages complete","followup":"Yes","n":"EEEE","impact":"Almost none","r":"EEESEESE","overall":"Competency-based","strength":"Groups gave local examples and checked each other\u2019s work.","focus":"4","action":"In the next lesson, the mentor will ask groups to explain one answer to the class.","school":"Mukuru","mood":"E","mat":"All students","role":"School leader","present":"No","support":"Reduced","oemat":"Yes, throughout","fbdate":"2026-10-21"},{"id":8,"mentor":"John John","observer":"John John","form":"Form 2","subject":"English","date":"2026-10-19","plan":"Available, all four stages complete","followup":"Yes","n":"EEEE","impact":"Almost none","r":"SESEESEE","overall":"Competency-based","strength":"Students used new vocabulary in their own sentences.","focus":"2","action":"In the next lesson, the mentor will prepare a challenge task for early finishers.","school":"Mukuru","mood":"E","mat":"All students","role":"School leader","present":"No","support":"Reduced","oemat":"Partly","fbdate":"2026-10-20"}];
+let data=SEED.concat(SEED2);
+try{const extra=JSON.parse(localStorage.getItem('piod-extra-v6')||'[]');if(Array.isArray(extra))data=data.concat(extra);}catch(e){}
+function saveExtra(){try{localStorage.setItem('piod-extra-v6',JSON.stringify(data.filter(o=>o.id>100)));}catch(e){}}
+
+data=data.map(norm);
+const $=s=>document.querySelector(s);
+const fmt=d=>{if(!d)return'';const [y,m,dd]=d.split('-');return `${+dd} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]} ${y}`};
+function opts(sel,list,ph){sel.innerHTML='';if(ph){const o=new Option(ph,'');sel.add(o);}list.forEach((v,i)=>sel.add(new Option(typeof v==='string'?v:v,typeof v==='string'?v:i)));}
+
+// Build form
+const F=$('#obsForm');
+opts(F.elements.school,SCHOOLS,'Choose');opts(F.elements.observer,OBSERVERS,'Choose');opts(F.elements.mentor,MENTORS,'Choose');opts(F.elements.form,FORMS,'Choose');opts(F.elements.subject,SUBJECTS,'Choose');opts(F.elements.plan,PLANS,'Choose');opts(F.elements.role,ROLES,'Choose');opts(F.elements.present,PRES,'Choose');opts(F.elements.support,SUPP,'Choose');opts(F.elements.oemat,OEMAT,'Choose');F.elements.fbdate.max=TODAY;
+F.elements.focus.innerHTML='<option value="">Choose</option>'+NORMS.map(d=>`<option value="${d[0]}">${lab(d[0])}</option>`).join('')+Object.keys(EF).map(k=>`<option value="${k}">${lab(k)}</option>`).join('')+IND.map((d,i)=>`<option value="${i+1}">${lab(String(i+1))}</option>`).join('');
+function chipGroup(name,list){const g=document.querySelector(`[data-group=${name}]`);g.innerHTML='';list.forEach(it=>{const [v,t]=Array.isArray(it)?it:[it,it];const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=t;b.dataset.cv=v;b.setAttribute('aria-pressed','false');b.onclick=()=>{g.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');g.dataset.val=v;g.closest('.q').classList.remove('missing');};g.appendChild(b);});}
+chipGroup('followup',FOLLOW);chipGroup('overall',LEVELS);chipGroup('impact',IMPACT);chipGroup('mood',[['E','Engaged'],['A','Apathetic']]);chipGroup('mat',MATS);
+const indBox=$('#indicators'), normBox=$('#norms');
+const DB={db:null,mem:new Map(),open(){return new Promise(r=>{try{const q=indexedDB.open('piod-evidence',1);q.onupgradeneeded=()=>q.result.createObjectStore('m');q.onsuccess=()=>{DB.db=q.result;r(DB.db)};q.onerror=()=>r(null);}catch(e){r(null)}})},
+ async put(k,v){DB.mem.set(k,v);const db=DB.db||await DB.open();if(!db)return false;return new Promise(r=>{try{const t=db.transaction('m','readwrite');t.objectStore('m').put(v,k);t.oncomplete=()=>r(true);t.onerror=()=>r(false);}catch(e){r(false)}})},
+ async get(k){if(DB.mem.has(k))return DB.mem.get(k);const db=DB.db||await DB.open();if(!db)return null;return new Promise(r=>{try{const q=db.transaction('m').objectStore('m').get(k);q.onsuccess=()=>r(q.result||null);q.onerror=()=>r(null);}catch(e){r(null)}})}};
+function syncEv(w){const e=w.querySelector('.evid');if(e)e.hidden=w.dataset.val==='X';}
+function drawEv(w,i){const th=w.querySelector('.thumbs');if(!th)return;th.innerHTML='';(pending[i]||[]).forEach((f,j)=>{const u=URL.createObjectURL(f);const t=document.createElement('div');t.className='thumb';t.innerHTML=f.type.startsWith('video')?`<video src="${u}#t=0.1" muted preload="metadata"></video>`:`<img src="${u}" alt="Attached evidence">`;const x=document.createElement('button');x.type='button';x.textContent='×';x.setAttribute('aria-label','Remove '+f.name);x.onclick=()=>{URL.revokeObjectURL(u);pending[i].splice(j,1);drawEv(w,i);};t.appendChild(x);th.appendChild(t);});}
+function initEv(w,i){const inp=w.querySelector('input[type=file]');w.querySelector('.attach').onclick=()=>inp.click();
+ inp.onchange=()=>{[...inp.files].forEach(f=>{if(f.size>MAXMB*1048576){toast(`“${f.name}” is over ${MAXMB} MB`);return;}(pending[i]=pending[i]||[]).push(f);});inp.value='';drawEv(w,i);};}
+function loadEv(o,d){d.querySelectorAll('[data-ev]').forEach(box=>{((o.ev||{})[box.dataset.ev]||[]).forEach(async m=>{const r=await DB.get(m.k);const t=document.createElement('div');t.className='thumb lg';if(!r||!r.blob){t.textContent='Not available on this device';t.style.cssText='font-size:12px;padding:6px';}else{const u=URL.createObjectURL(r.blob);t.innerHTML=(m.t||'').startsWith('video')?`<video src="${u}" controls preload="metadata"></video>`:`<a href="${u}" target="_blank" rel="noopener"><img src="${u}" alt="Attached evidence"></a>`;}box.appendChild(t);});});}
+function buildRows(box,list,prefix,num,sub,desc,ev){list.forEach((d,i)=>{const w=document.createElement('div');w.className='ind q';w.dataset.k=prefix+i;
+ w.innerHTML=`<div class="ind-head"><span class="ind-num">${num(d,i)}</span><div><div class="ind-title">${d[1]}</div><div class="ind-pillar">${sub(d)}</div></div></div><p class="ind-inv">${desc(d)}</p><div class="rate" role="group" aria-label="${d[1]}"></div><p class="err" style="margin-left:28px">Choose a rating</p>${ev?'<div class="evid"><button type="button" class="btn ghost attach">Attach photo or video as evidence</button><input type="file" accept="image/*,video/*" multiple hidden><div class="thumbs"></div></div>':''}`;if(ev)initEv(w,i);
+ const r=w.querySelector('.rate');Object.entries(RATE).forEach(([k,v])=>{const b=document.createElement('button');b.type='button';b.dataset.v=k;b.textContent=v;b.setAttribute('aria-pressed','false');b.onclick=()=>{r.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');w.dataset.val=k;w.classList.remove('missing');syncEv(w);};r.appendChild(b);});
+ box.appendChild(w);});}
+buildRows(normBox,NORMS,'n',d=>d[0],()=> 'Classroom condition',d=>`<b>Teacher is likely:</b> ${d[2]}<br><b>Students are likely:</b> ${d[3]}<br><b>Impact on learning:</b> ${d[4]}`);
+buildRows(indBox,IND,'r',(d,i)=>i+1,d=>d[0],d=>`<b>Teacher is likely:</b> ${d[2]}<br><b>Students are likely:</b> ${d[3]}`,true);
+F.elements.mentor.addEventListener('change',()=>{const last=data.filter(o=>o.mentor===F.elements.mentor.value).sort((a,b)=>b.date.localeCompare(a.date))[0];
+ $('#lastStep').textContent=last?`Was the last action step put into practice? Last step (${fmt(last.date)}): “${last.action}”`:'Was the last action step put into practice?';});
+F.addEventListener('input',e=>{const q=e.target.closest('.q');if(q)q.classList.remove('missing');});
+
+function setChip(name,val){const g=document.querySelector(`[data-group=${name}]`);g.querySelectorAll('button').forEach(b=>{const on=b.dataset.cv===val;b.setAttribute('aria-pressed',on);});g.dataset.val=val;}
+function setRate(i,k,box=indBox){const w=box.children[i];w.dataset.val=k;w.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===k));syncEv(w);}
+function clearForm(){F.reset();document.querySelectorAll('[data-group]').forEach(g=>{delete g.dataset.val;g.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed','false'));});[...indBox.children,...normBox.children].forEach(w=>{delete w.dataset.val;w.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed','false'));});document.querySelectorAll('.missing').forEach(x=>x.classList.remove('missing'));pending={};[...indBox.children].forEach((w,i)=>{drawEv(w,i);syncEv(w);});$('#lastStep').textContent='Was the last action step put into practice?';}
+$('#clearForm').onclick=clearForm;
+$('#fillSample').onclick=()=>{clearForm();F.elements.school.value='Mukuru';F.elements.observer.value='Mussa Ntandu';F.elements.mentor.value='Ibrahim Mponda';F.elements.mentor.dispatchEvent(new Event('change'));F.elements.form.value='Form 2';F.elements.subject.value='Business Studies';F.elements.date.value=TODAY;F.elements.plan.value=PLANS[0];F.elements.role.value='OETZ coach';F.elements.present.value='Yes';F.elements.support.value='Full';F.elements.oemat.value=OEMAT[0];F.elements.fbdate.value=TODAY;
+ setChip('followup','First observation');'EESE'.split('').forEach((k,i)=>setRate(i,k,normBox));setChip('impact','Almost none');'EESESEEE'.split('').forEach((k,i)=>setRate(i,k));setChip('overall','Competency-based');
+ F.elements.strength.value='Learners presented their group findings clearly and answered questions from peers.';F.elements.focus.value='5';F.elements.action.value='In the next lesson, the mentor will ask each group “why” after their answer and wait for a reason before moving on.';setChip('mood','E');setChip('mat','Most students');F.elements.matnote.value='Two groups shared one textbook.';};
+
+F.addEventListener('submit',e=>{e.preventDefault();let first=null;
+ document.querySelectorAll('#obsForm .q').forEach(q=>{const k=q.dataset.k;let ok;
+  if(/^[rn]\d$/.test(k)||k==='followup'||k==='overall'||k==='impact'||k==='mood'||k==='mat'){const holder=/^[rn]\d$/.test(k)?q:q.querySelector('[data-group]');ok=!!holder.dataset.val;}
+  else ok=F.elements[k].value.trim()!=='';
+  q.classList.toggle('missing',!ok);if(!ok&&!first)first=q;});
+ if(first){first.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});return;}
+ const o={id:Date.now(),role:F.elements.role.value,present:F.elements.present.value,support:F.elements.support.value,oemat:F.elements.oemat.value,fbdate:F.elements.fbdate.value,plan:F.elements.plan.value,school:F.elements.school.value,observer:F.elements.observer.value,mentor:F.elements.mentor.value,form:F.elements.form.value,subject:F.elements.subject.value,date:F.elements.date.value,
+  followup:document.querySelector('[data-group=followup]').dataset.val,n:[...normBox.children].map(w=>w.dataset.val).join(''),impact:document.querySelector('[data-group=impact]').dataset.val,r:[...indBox.children].map(w=>w.dataset.val).join(''),
+  overall:document.querySelector('[data-group=overall]').dataset.val,strength:F.elements.strength.value.trim(),focus:F.elements.focus.value,action:F.elements.action.value.trim(),mood:document.querySelector('[data-group=mood]').dataset.val,mat:document.querySelector('[data-group=mat]').dataset.val,matnote:F.elements.matnote.value.trim()};
+ const ev={},jobs=[];[...indBox.children].forEach((w,i)=>{if(w.dataset.val==='X')return;(pending[i]||[]).forEach((f,j)=>{const k=o.id+'-'+i+'-'+j;(ev[i]=ev[i]||[]).push({k,t:f.type,n:f.name});jobs.push(DB.put(k,{blob:f,t:f.type,n:f.name}));});});
+ if(Object.keys(ev).length)o.ev=ev;
+ Promise.all(jobs).then(()=>{data.push(o);saveExtra();clearForm();toast('Observation saved');location.hash='observations';});});
+
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2200);}
+
+// Observations list
+const fM=$('#fMentor');
+function renderList(){const cur=fM.value;opts(fM,['All mentors',...[...new Set(data.map(o=>o.mentor))].sort()]);fM.value=cur||'All mentors';
+ const rows=data.filter(o=>fM.value==='All mentors'||o.mentor===fM.value).sort((a,b)=>b.date.localeCompare(a.date));
+ $('#obsRows').innerHTML='';rows.forEach(o=>{const tr=document.createElement('tr');tr.className='click';tr.tabIndex=0;
+  const ev=o.r.split('').filter(x=>x==='E').length;
+  tr.innerHTML=`<td>${fmt(o.date)}</td><td></td><td></td><td></td><td>${ev} of 8 · ${sc(o)}%</td><td>${moodPill(o.mood)}</td><td><span class="lvl">${o.overall}</span></td>`;
+  tr.children[1].textContent=o.mentor;tr.children[2].textContent=o.subject;tr.children[3].textContent=o.observer;
+  tr.onclick=()=>showDetail(o);tr.onkeydown=e=>{if(e.key==='Enter')showDetail(o);};$('#obsRows').appendChild(tr);});
+ $('#detail').hidden=true;}
+fM.onchange=renderList;
+function showDetail(o){const d=$('#detail');d.hidden=false;
+ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ d.innerHTML=`<h2>${esc(o.mentor)}, ${esc(o.subject)} (${esc(o.form)}), ${fmt(o.date)}</h2><dl>
+ <dt>School</dt><dd>${esc(o.school)}</dd><dt>Lesson plan</dt><dd>${esc(o.plan||'')}</dd><dt>Observer role</dt><dd>${esc(o.role)}, OETZ staff present: ${esc(o.present)}</dd><dt>School support level</dt><dd>${esc(o.support)}</dd><dt>OETZ materials used</dt><dd>${esc(o.oemat)}</dd><dt>Practice score</dt><dd>${sc(o)}%</dd><dt>Observer</dt><dd>${esc(o.observer)}</dd><dt>Last action step put into practice?</dt><dd>${esc(o.followup)}</dd>
+ ${NORMS.map((x,i)=>`<dt>${x[0]}. ${x[1]}</dt><dd>${RATE[o.n[i]]}</dd>`).join('')}<dt>E. Students’ mood</dt><dd>${moodPill(o.mood)}</dd><dt>F. Availability of learning materials</dt><dd>${esc(o.mat||'—')}${o.matnote?'<br>'+esc(o.matnote):''}</dd><dt>Learning time lost</dt><dd>${esc(o.impact)}</dd>
+ ${IND.map((x,i)=>`<dt>${i+1}. ${x[1]}</dt><dd>${RATE[o.r[i]]}<div class="thumbs" data-ev="${i}"></div></dd>`).join('')}
+ <dt>Overall judgement</dt><dd><span class="lvl">${esc(o.overall)}</span></dd><dt>Key strength</dt><dd>${esc(o.strength)}</dd>
+ <dt>Condition or practice to focus on next</dt><dd>${lab(o.focus)}</dd><dt>Action step</dt><dd>${esc(o.action)}</dd><dt>Feedback given on</dt><dd>${fmt(o.fbdate)}</dd></dl>`;
+ loadEv(o,d);d.scrollIntoView({block:'nearest'});}
+
+// Summary
+const fS=$('#fSchool');opts(fS,SCHOOLS);fS.onchange=renderSummary;
+function latest(school){const m={};data.filter(o=>o.school===school).forEach(o=>{if(!m[o.mentor]||o.date>m[o.mentor].date)m[o.mentor]=o;});return Object.values(m);}
+function renderSummary(){const L=latest(fS.value);const all=data.filter(o=>o.school===fS.value);
+ const inv=L.filter(o=>o.overall!=='Teacher-led').length;const eng=L.filter(o=>o.mood==='E').length,mat=L.filter(o=>o.mat==='All students'||o.mat==='Most students').length;const pc=n=>L.length?Math.round(n/L.length*100):0;
+ $('#stats').innerHTML=`<div class="stat"><b>${L.length}</b><span>mentors observed</span></div><div class="stat"><b>${all.length}</b><span>observations</span></div><div class="stat"><b>${L.length?Math.round(inv/L.length*100):0}%</b><span>teaching at competency-based level or beyond</span></div><div class="stat"><b>${pc(eng)}%</b><span>lessons with engaged students</span></div><div class="stat"><b>${pc(mat)}%</b><span>lessons where most or all students had materials</span></div>`;
+ const bars=$('#bars');bars.innerHTML='';
+ if(!L.length){bars.innerHTML='<p class="sub">No observations for this school yet. Add one from New observation.</p>';$('#tracker').innerHTML='';return;}
+ [...NORMS.map((d,i)=>({t:`${d[0]}. ${d[1]}`,g:o=>o.n[i]})),...IND.map((d,i)=>({t:`${i+1}. ${d[1]}`,g:o=>o.r[i]}))].map(it=>{const c={E:0,S:0,N:0,X:0};L.forEach(o=>c[it.g(o)]++);return{t:it.t,c,p:Math.round(c.E/L.length*100)};})
+ .sort((a,b)=>a.p-b.p).forEach(({t,c,p})=>{const n=L.length;const row=document.createElement('div');row.className='brow';
+  row.innerHTML=`<div class="lab">${t}</div><div class="stack" role="img" aria-label="${t}: ${c.E} evident, ${c.S} somewhat, ${c.N} not evident, ${c.X} not observed"><span style="width:${c.E/n*100}%;background:var(--ev)"></span><span style="width:${c.S/n*100}%;background:var(--se)"></span><span style="width:${c.N/n*100}%;background:var(--ne)"></span><span style="width:${c.X/n*100}%;background:var(--no)"></span></div><div class="pct">${p}%</div>`;bars.appendChild(row);});
+ const t=$('#tracker');t.innerHTML='';L.sort((a,b)=>a.date.localeCompare(b.date)).forEach(o=>{const tr=document.createElement('tr');
+  tr.innerHTML=`<td></td><td>${fmt(o.date)}</td><td><span class="lvl">${o.overall}</span></td><td>${lab(o.focus)}</td><td></td>`;
+  tr.children[0].textContent=o.mentor;tr.children[4].textContent=o.action;t.appendChild(tr);});}
+
+// KPI tracker
+function renderKpis(){const yr=TODAY.slice(0,4),by={};
+ data.forEach(o=>{const s=by[o.school]=by[o.school]||{};(s[o.mentor]=s[o.mentor]||[]).push(o);});
+ const sch=SCHOOLS.filter(s=>by[s]),sorted=l=>l.slice().sort((a,b)=>a.date.localeCompare(b.date)),last=l=>sorted(l).pop();
+ let n11=0,r11='',t12=0,m12=0,r12='',n31=0,d31=0,r31='';
+ sch.forEach(s=>{const m=Object.values(by[s]);
+  const ok=m.filter(l=>l.filter(o=>o.date.slice(0,4)===yr&&o.fbdate).length>=2).length,met=ok===m.length;if(met)n11++;
+  r11+=`<tr><td>${s}</td><td>${m.length}</td><td>${ok}</td><td class="${met?'ok':'no'}">${met?'Yes':'Not yet'}</td></tr>`;
+  const mt=m.filter(l=>meets(last(l))).length;t12+=m.length;m12+=mt;r12+=`<tr><td>${s}</td><td>${m.length}</td><td>${mt}</td><td>${Math.round(mt/m.length*100)}%</td></tr>`;
+  const red=m.filter(l=>last(l).support==='Reduced');if(!red.length)return;d31++;
+  const best=red.reduce((a,l)=>a+Math.max(...l.map(sc)),0)/red.length,now=red.reduce((a,l)=>a+sc(last(l)),0)/red.length,ret=best?now/best>=0.7:false;if(ret)n31++;
+  const led=red.flat().filter(o=>o.role==='School leader'&&o.present==='No').length;
+  r31+=`<tr><td>${s}</td><td>${red.length}</td><td>${Math.round(best)}%</td><td>${Math.round(now)}%</td><td>${led}</td><td class="${ret?'ok':'no'}">${ret?'Keeps at least 70%':'Below 70%'}</td></tr>`;});
+ const card=(t,tag,big,lab,th,rows,note)=>`<div class="panel table-wrap"><h2>${t}<span class="tag">${tag}</span></h2><div class="stats"><div class="stat"><b>${big}</b><span>${lab}</span></div></div><table><thead><tr>${th.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table><p class="def" style="margin:10px 0 0">${note}</p></div>`;
+ $('#kpiBox').innerHTML=card('Observation twice a year, with documented feedback','KPI 1.1',`${n11} of ${sch.length}`,'schools where every observed teacher had at least two observations with documented feedback this year',['School','Teachers observed','Teachers with 2+ observations','School meets'],r11,'Plan target: 10 schools in 2027. Teachers are the mentors seen in the data until a school roster is loaded.')
+ +card('Teachers applying competency-based instruction','KPI 1.2',`${t12?Math.round(m12/t12*100):0}%`,'of teachers meet the standard in their latest observation',['School','Teachers','Meeting standard','Share'],r12,'Plan target: 25% in 2027. The standard here is the overall judgement; replace it with the agreed rubric threshold.')
+ +card('Schools keeping their best practice score','KPI 3.1',`${n31} of ${d31}`,'schools on reduced support keep at least 70% of their best score',['School','Teachers on reduced support','Best score','Latest score','Leader observations without OETZ','Result'],r31||'<tr><td colspan="6">No schools on reduced support yet.</td></tr>','Target still to be set in the plan. Leader observations without OETZ present are the evidence for IR 3.A.');}
+
+// Routing
+function route(){const v=(location.hash||'#new').slice(1);const valid=['new','observations','summary','kpis'].includes(v)?v:'new';
+ document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+valid));
+ document.querySelectorAll('nav a').forEach(a=>a.toggleAttribute('aria-current',a.dataset.v===valid)||a.dataset.v===valid&&a.setAttribute('aria-current','page'));
+ document.querySelectorAll('nav a').forEach(a=>{if(a.dataset.v===valid)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
+ if(valid==='observations')renderList();if(valid==='summary')renderSummary();if(valid==='kpis')renderKpis();window.scrollTo(0,0);}
+addEventListener('hashchange',route);route();
+</script>
+</body>
+</html>
